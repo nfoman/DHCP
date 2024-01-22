@@ -144,7 +144,7 @@ void Dhcp_ACK(DHCP_PACKET *packet, struct sockaddr_in client, int fd,dhcp_ip *ar
         {
             if ((DHCP_CLIENT(packet,DHCPREQUEST)) == DHCPREQUEST) {
                 Fill_Server(packet,type,arr);
-                printf("%d\n",packet->options[DHCP_MESSAGE_TYPE].value);
+                printf("%ld\n",packet->options[DHCP_MESSAGE_TYPE].value);
                 sendto(fd, packet, sizeof(DHCP_PACKET), 0, (struct sockaddr *) &client, sizeof(client));
 
             }
