@@ -77,6 +77,10 @@ void Dhcp_Discover(DHCP_PACKET *packet, struct sockaddr_in serv, int fd){
         exit(EXIT_FAILURE);
     }
     check=recvfrom(fd,packet,sizeof(DHCP_PACKET),0,(struct sockaddr*)&serv,&size);
+    if (check==0){
+        perror("recv error()");
+        exit(EXIT_FAILURE);
+    }
 }
 
 void Dhcp_Request(DHCP_PACKET *packet, struct sockaddr_in serv, int fd){
@@ -90,6 +94,11 @@ void Dhcp_Request(DHCP_PACKET *packet, struct sockaddr_in serv, int fd){
         exit(EXIT_FAILURE);
     }
     check=recvfrom(fd,packet,sizeof(DHCP_PACKET),0,(struct sockaddr*)&serv,&size);
+    if (check==0){
+        perror("recv error()");
+        exit(EXIT_FAILURE);
+    }
+    
 }
 
 
@@ -98,16 +107,13 @@ void Dhcp_Request(DHCP_PACKET *packet, struct sockaddr_in serv, int fd){
 
 
 int main(){
-    // DHCP_PACKET *packet = (DHCP_PACKET *) malloc(sizeof(DHCP_PACKET));
     DHCP_PACKET *packet = malloc(sizeof(DHCP_PACKET));
     if (packet == NULL) {
         perror("malloc failed");
         exit(EXIT_FAILURE);
     }
-    
     struct sockaddr_in serv,client;
     int fd;
-    unsigned char buffer[BUF_SIZE];
     int flag =1;  
     serv.sin_family = AF_INET;
     serv.sin_port=htons(SERVER_PORT);

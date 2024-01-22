@@ -42,12 +42,12 @@ int DHCP_CLIENT(DHCP_PACKET *packet, int type) {
     switch (type)
     {
     case DHCPDISCOVER:
-        if (packet->options[53].value == DHCPDISCOVER) {
+        if (packet->options[DHCP_MESSAGE_TYPE].value == DHCPDISCOVER) {
         return DHCPDISCOVER;
         }
         break;
     case DHCPREQUEST:
-        if (packet->options[53].value == DHCPREQUEST) {
+        if (packet->options[DHCP_MESSAGE_TYPE].value == DHCPREQUEST) {
         return DHCPREQUEST;
         }
         break;
@@ -111,7 +111,6 @@ void Fill_Server(DHCP_PACKET *packet,int type,dhcp_ip *arr){
     packet->ciaddr = 0;  // Client IP address
     packet->flags = 0;  // Broadcast
     pull_ip(arr,packet);
-    packet->yiaddr=inet_addr("192.168.1.2");
     packet->magic_cookie = htonl(0x63825363);
     fillDhcpOptions_server(packet,type);
 }
@@ -145,7 +144,7 @@ void Dhcp_ACK(DHCP_PACKET *packet, struct sockaddr_in client, int fd,dhcp_ip *ar
         {
             if ((DHCP_CLIENT(packet,DHCPREQUEST)) == DHCPREQUEST) {
                 Fill_Server(packet,type,arr);
-                printf("%d\n",packet->options[53].value);
+                printf("%d\n",packet->options[DHCP_MESSAGE_TYPE].value);
                 sendto(fd, packet, sizeof(DHCP_PACKET), 0, (struct sockaddr *) &client, sizeof(client));
 
             }
@@ -158,7 +157,10 @@ void Dhcp_ACK(DHCP_PACKET *packet, struct sockaddr_in client, int fd,dhcp_ip *ar
 int main(){
     dhcp_ip arr[ALL_ADDRESSES];
     DHCP_PACKET *packet = malloc(sizeof(DHCP_PACKET));
-    unsigned char buffer[BUF_SIZE];
+    if (packet == NULL) {
+        perror("malloc failed");
+        exit(EXIT_FAILURE);
+    }
     serv.sin_family = AF_INET;
     serv.sin_port=htons(SERVER_PORT);
     int fd;
