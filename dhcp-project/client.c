@@ -26,7 +26,7 @@ typedef struct {
     dhcp_option options[308]; 
 } DHCP_PACKET;
 
-void addOption(dhcp_option *options, unsigned char option, unsigned char length, unsigned long value) {
+void ADDOPTION(dhcp_option *options, unsigned char option, unsigned char length, unsigned long value) {
     
     options[option].code = option;
     options[option].length = length;
@@ -34,26 +34,26 @@ void addOption(dhcp_option *options, unsigned char option, unsigned char length,
     
 }
 
-void fillDhcpOptions_client(DHCP_PACKET *packet,int type) {
+void FILLDHCPOPTIONS_CLIENT(DHCP_PACKET *packet,int type) {
      
     // Add options to DHCP_PACKET
     if(type==DHCPDISCOVER){
-        addOption(packet->options, DHCP_MESSAGE_TYPE,1,DHCPDISCOVER);;
-        addOption(packet->options, CLIENT_IDENTIFIER,6, 0xa85e45c602cd);
-        addOption(packet->options, DHCP_END, 1,0);
+        ADDOPTION(packet->options, DHCP_MESSAGE_TYPE,1,DHCPDISCOVER);;
+        ADDOPTION(packet->options, CLIENT_IDENTIFIER,6, 0xa85e45c602cd);
+        ADDOPTION(packet->options, DHCP_END, 1,0);
     }
     else{
 
-        addOption(packet->options, DHCP_MESSAGE_TYPE,1, DHCPREQUEST);
-        addOption(packet->options, CLIENT_IDENTIFIER,6, 0xa85e45c602cd);
-        addOption(packet->options, DHCP_REQUESTED_IP_ADDRESS, 4, packet->yiaddr);
-        addOption(packet->options, DHCP_END,1, 0);  
+        ADDOPTION(packet->options, DHCP_MESSAGE_TYPE,1, DHCPREQUEST);
+        ADDOPTION(packet->options, CLIENT_IDENTIFIER,6, 0xa85e45c602cd);
+        ADDOPTION(packet->options, DHCP_REQUESTED_IP_ADDRESS, 4, packet->yiaddr);
+        ADDOPTION(packet->options, DHCP_END,1, 0);  
     }   
 
 }
    
 
-void Fill_Client(DHCP_PACKET *packet, int type){
+void FILL_CLIENT(DHCP_PACKET *packet, int type){
     packet->op = 1;  // DHCP request
     packet->htype = 1;  // Ethernet
     packet->hlen = sizeof(packet->chaddr);
@@ -62,15 +62,15 @@ void Fill_Client(DHCP_PACKET *packet, int type){
     packet->flags = 0;  // Broadcast
     memcpy(packet->chaddr, "\xa8\x5e\x45\xc6\x02\xcd", packet->hlen);
     packet->magic_cookie = htonl(0x63825363);
-    fillDhcpOptions_client(packet, type);
+    FILLDHCPOPTIONS_CLIENT(packet, type);
     packet->yiaddr=0;
 }
 
-void Dhcp_Discover(DHCP_PACKET *packet, struct sockaddr_in serv, int fd){
+void DHCP_DISCOVER(DHCP_PACKET *packet, struct sockaddr_in serv, int fd){
     int check = 0;
     socklen_t size = sizeof(serv);
     int type = DHCPDISCOVER;   
-    Fill_Client(packet, type);
+    FILL_CLIENT(packet, type);
 
     if(sendto(fd, packet, sizeof(DHCP_PACKET), 0, (struct sockaddr *)&serv, sizeof(serv))==-1){
         perror("sendto error()");
@@ -83,11 +83,11 @@ void Dhcp_Discover(DHCP_PACKET *packet, struct sockaddr_in serv, int fd){
     }
 }
 
-void Dhcp_Request(DHCP_PACKET *packet, struct sockaddr_in serv, int fd){
+void DHCP_REQUEST(DHCP_PACKET *packet, struct sockaddr_in serv, int fd){
     int check = 0;
     socklen_t size = sizeof(serv);
     int type = DHCPREQUEST;
-    Fill_Client(packet, type);
+    FILL_CLIENT(packet, type);
 
     if(sendto(fd, packet, sizeof(DHCP_PACKET), 0, (struct sockaddr *)&serv, sizeof(serv))==-1){
         perror("sendto error()");
@@ -129,8 +129,8 @@ int main(){
     setsockopt(fd,SOL_SOCKET,SO_BROADCAST,&flag,sizeof(flag));
     socklen_t size = sizeof(serv);
     
-    Dhcp_Discover(packet, serv, fd);
-    Dhcp_Request(packet, serv, fd);
+    DHCP_DISCOVER(packet, serv, fd);
+    DHCP_REQUEST(packet, serv, fd);
     
     client.sin_addr.s_addr=packet->yiaddr;
     int ret =bind(fd,(const struct sockaddr*)&client,sizeof(client));

@@ -32,7 +32,7 @@ typedef struct {
 } dhcp_ip;
 
 
-void addOption(dhcp_option *options, unsigned char option, unsigned char length, unsigned long value) {
+void ADDOPTION(dhcp_option *options, unsigned char option, unsigned char length, unsigned long value) {
     options[option].code = option;
     options[option].length = length;
     options[option].value =  value; 
@@ -57,7 +57,7 @@ int DHCP_CLIENT(DHCP_PACKET *packet, int type) {
     }
 
 }
-void fill_ip(dhcp_ip *arr){
+void FILL_IP(dhcp_ip *arr){
     for (size_t i = 0; i < ALL_ADDRESSES; i++)
     {   
         arr[i].ip = inet_addr("192.168.1.2");
@@ -66,28 +66,28 @@ void fill_ip(dhcp_ip *arr){
     
 }
 
-void fillDhcpOptions_server(DHCP_PACKET *packet,int type) {
+void FILLDHCPOPTIONS_SERVER(DHCP_PACKET *packet,int type) {
     unsigned long netmask = inet_addr("255.255.255.0");
     
     // Add options to DHCP_PACKET
     if(type==DHCPOFFER){
         
-        addOption(packet->options, DHCP_SUBNET_MASK,4, netmask);
-        addOption(packet->options, DHCP_MESSAGE_TYPE,1,DHCPOFFER);;
-        addOption(packet->options, DHCP_SERVER_IDENTIFIER,4, (unsigned long)inet_addr("192.168.1.1"));
-        addOption(packet->options, DHCP_LEASE_TIME, 2,3600);
-        addOption(packet->options, DHCP_END,1, 0);
+        ADDOPTION(packet->options, DHCP_SUBNET_MASK,4, netmask);
+        ADDOPTION(packet->options, DHCP_MESSAGE_TYPE,1,DHCPOFFER);;
+        ADDOPTION(packet->options, DHCP_SERVER_IDENTIFIER,4, (unsigned long)inet_addr("192.168.1.1"));
+        ADDOPTION(packet->options, DHCP_LEASE_TIME, 2,3600);
+        ADDOPTION(packet->options, DHCP_END,1, 0);
     }
     if(type==DHCPACK){
         
-        addOption(packet->options, DHCP_SUBNET_MASK,4, netmask);
-        addOption(packet->options, DHCP_MESSAGE_TYPE,1, DHCPACK);
-        addOption(packet->options, DHCP_SERVER_IDENTIFIER,4, (unsigned long)inet_addr("192.168.1.1"));
-        addOption(packet->options, DHCP_LEASE_TIME, 2,3600);
-        addOption(packet->options, DHCP_END,1, 0);
+        ADDOPTION(packet->options, DHCP_SUBNET_MASK,4, netmask);
+        ADDOPTION(packet->options, DHCP_MESSAGE_TYPE,1, DHCPACK);
+        ADDOPTION(packet->options, DHCP_SERVER_IDENTIFIER,4, (unsigned long)inet_addr("192.168.1.1"));
+        ADDOPTION(packet->options, DHCP_LEASE_TIME, 2,3600);
+        ADDOPTION(packet->options, DHCP_END,1, 0);
     }
 }
-void pull_ip(dhcp_ip *arr, DHCP_PACKET *packet){
+void PULL_IP(dhcp_ip *arr, DHCP_PACKET *packet){
     
     for (int i = 0; i<ALL_ADDRESSES;i++)
     {
@@ -102,7 +102,7 @@ void pull_ip(dhcp_ip *arr, DHCP_PACKET *packet){
     
 }
 
-void Fill_Server(DHCP_PACKET *packet,int type,dhcp_ip *arr){
+void FILL_SERVER(DHCP_PACKET *packet,int type,dhcp_ip *arr){
     
     packet->op = 2;  // DHCP request
     packet->htype = 1;  // Ethernet
@@ -110,23 +110,23 @@ void Fill_Server(DHCP_PACKET *packet,int type,dhcp_ip *arr){
     packet->xid = htonl(123456789);  // Transaction ID
     packet->ciaddr = 0;  // Client IP address
     packet->flags = 0;  // Broadcast
-    pull_ip(arr,packet);
+    PULL_IP(arr,packet);
     packet->magic_cookie = htonl(0x63825363);
-    fillDhcpOptions_server(packet,type);
+    FILLDHCPOPTIONS_SERVER(packet,type);
 }
 
 
-void Dhcp_Offer(DHCP_PACKET *packet, struct sockaddr_in client, int fd,dhcp_ip *arr){
+void DHCP_OFFER(DHCP_PACKET *packet, struct sockaddr_in client, int fd,dhcp_ip *arr){
     int check = 0;
     socklen_t size = sizeof(serv);
     int type = DHCPOFFER;   
-    Fill_Server(packet, type,arr);
+    FILL_SERVER(packet, type,arr);
 
     check=recvfrom(fd, packet, sizeof(DHCP_PACKET), 0, (struct sockaddr *) &client, &size);
     if (check!=0)
     {
         if ((DHCP_CLIENT(packet,DHCPDISCOVER)) == DHCPDISCOVER) {
-            Fill_Server(packet,type,arr);
+            FILL_SERVER(packet,type,arr);
             sendto(fd, packet, sizeof(DHCP_PACKET), 0, (struct sockaddr *) &client, sizeof(client));
         }
 
@@ -134,7 +134,7 @@ void Dhcp_Offer(DHCP_PACKET *packet, struct sockaddr_in client, int fd,dhcp_ip *
       
 }
 
-void Dhcp_ACK(DHCP_PACKET *packet, struct sockaddr_in client, int fd,dhcp_ip *arr){
+void DHCP_ACK(DHCP_PACKET *packet, struct sockaddr_in client, int fd,dhcp_ip *arr){
     int check = 0;
     socklen_t size = sizeof(serv);
     int type = DHCPACK;   
@@ -143,7 +143,7 @@ void Dhcp_ACK(DHCP_PACKET *packet, struct sockaddr_in client, int fd,dhcp_ip *ar
         if (check!=0)
         {
             if ((DHCP_CLIENT(packet,DHCPREQUEST)) == DHCPREQUEST) {
-                Fill_Server(packet,type,arr);
+                FILL_SERVER(packet,type,arr);
                 printf("%ld\n",packet->options[DHCP_MESSAGE_TYPE].value);
                 sendto(fd, packet, sizeof(DHCP_PACKET), 0, (struct sockaddr *) &client, sizeof(client));
 
@@ -164,7 +164,7 @@ int main(){
     serv.sin_family = AF_INET;
     serv.sin_port=htons(SERVER_PORT);
     int fd;
-    fill_ip(arr);
+    FILL_IP(arr);
     fd=socket(AF_INET,SOCK_DGRAM,0);
     if (fd == -1) {
         perror("error in socket()");
@@ -179,8 +179,8 @@ int main(){
     socklen_t size=sizeof(serv);
     while (1)
     {
-        Dhcp_Offer(packet,client,fd,arr);
-        Dhcp_ACK(packet,client,fd,arr);
+        DHCP_OFFER(packet,client,fd,arr);
+        DHCP_ACK(packet,client,fd,arr);
     }
 
 }
